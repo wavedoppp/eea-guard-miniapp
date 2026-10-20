@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>EEA Guard — гейты</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{
+    --bg: var(--tg-theme-bg-color, #17212b);
+    --sec: var(--tg-theme-secondary-bg-color, #232e3c);
+    --text: var(--tg-theme-text-color, #f5f5f5);
+    --hint: var(--tg-theme-hint-color, #7d8b99);
+    --accent: var(--tg-theme-button-color, #2ea6ff);
+    --accent-text: var(--tg-theme-button-text-color, #fff);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:16px 16px 96px;font:15px/1.4 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif;
+       background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent}
+  h1{font-size:18px;margin:4px 0 2px}
+  .sub{color:var(--hint);font-size:13px;margin:0 0 18px}
+  .card{background:var(--sec);border-radius:14px;padding:14px 14px 6px;margin-bottom:14px}
+  .row{padding:10px 0;border-bottom:1px solid rgba(127,139,153,.15)}
+  .row:last-child{border-bottom:0}
+  .lbl{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+  .lbl .name{font-weight:600}
+  .lbl .val{font-variant-numeric:tabular-nums;color:var(--accent);font-weight:700;font-size:16px}
+  .lbl .unit{color:var(--hint);font-weight:400;font-size:13px;margin-left:2px}
+  .hint{color:var(--hint);font-size:12px;margin:-4px 0 8px}
+  input[type=range]{width:100%;accent-color:var(--accent);height:26px;margin:0}
+  .seg{display:flex;gap:8px;margin-top:4px}
+  .seg button{flex:1;padding:10px;border:0;border-radius:10px;background:var(--bg);color:var(--text);
+              font-size:14px;font-weight:600}
+  .seg button.on{background:var(--accent);color:var(--accent-text)}
+  .note{color:var(--hint);font-size:12px;text-align:center;margin-top:10px}
+</style>
+</head>
+<body>
+  <h1>🔒 EEA Guard — гейты</h1>
+  <p class="sub">Пороги, по которым гард паузит адсеты. Меняй ползунки и жми «Сохранить».</p>
+
+  <div class="card" id="funnelCard">
+    <div class="row">
+      <div class="lbl"><span class="name">CLICK-гейт</span><span><span class="val" id="v_click">5</span><span class="unit">$</span></span></div>
+      <div class="hint">Нет ни одного клика к этому спенду → пауза.</div>
+      <input type="range" id="click_gate" min="1" max="30" step="0.5" value="5">
+    </div>
+    <div class="row">
+      <div class="lbl"><span class="name">LEAD-гейт</span><span><span class="val" id="v_lead">9</span><span class="unit">$</span></span></div>
+      <div class="hint">Нет ни одного лида к этому спенду → пауза.</div>
+      <input type="range" id="lead_gate" min="2" max="40" step="0.5" value="9">
+    </div>
+    <div class="row">
+      <div class="lbl"><span class="name">1-я рега</span><span><span class="val" id="v_reg1">15</span><span class="unit">$</span></span></div>
+      <div class="hint">Нет первой реги к этому спенду → пауза.</div>
+      <input type="range" id="reg1_gate" min="5" max="60" step="1" value="15">
+    </div>
+    <div class="row">
+      <div class="lbl"><span class="name">1-я рега (≥2 лида)</span><span><span class="val" id="v_reg1b">20</span><span class="unit">$</span></span></div>
+      <div class="hint">Продлённый дедлайн первой реги, если лидов уже ≥2.</div>
+      <input type="range" id="reg1_gate_2lead" min="5" max="80" step="1" value="20">
+    </div>
+    <div class="row">
+      <div class="lbl"><span class="name">CPR-макс</span><span><span class="val" id="v_cpr">30</span><span class="unit">$</span></span></div>
+      <div class="hint">Стоимость реги (спенд/реги) выше — пауза.</div>
+      <input type="range" id="cpr_max" min="10" max="120" step="1" value="30">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <div class="lbl"><span class="name">Префикс кампаний</span></div>
+      <div class="hint">Гард сторожит адсеты, чьё имя кампании начинается с этого (EEA, FR, …).</div>
+      <input type="text" id="prefix" value="EEA" maxlength="16" autocapitalize="characters"
+             style="width:100%;padding:10px;border:0;border-radius:10px;background:var(--bg);
+                    color:var(--text);font-size:15px;font-weight:600;text-transform:uppercase">
+    </div>
+    <div class="row">
+      <div class="lbl"><span class="name">Режим</span></div>
+      <div class="seg" id="modeSeg">
+        <button data-mode="funnel" class="on">funnel (EEA)</button>
+        <button data-mode="install">install (LB)</button>
+      </div>
+    </div>
+    <div class="row">
+      <div class="lbl"><span class="name">Отчёт в TG каждые</span><span><span class="val" id="v_rep">30</span><span class="unit">мин</span></span></div>
+      <input type="range" id="report_every_min" min="5" max="120" step="5" value="30">
+    </div>
+  </div>
+
+  <p class="note" id="who"></p>
+
+<script>
+(function(){
+  var tg = window.Telegram && window.Telegram.WebApp;
+  var GATES = ["click_gate","lead_gate","reg1_gate","reg1_gate_2lead","cpr_max","report_every_min"];
+  var VMAP = {click_gate:"v_click", lead_gate:"v_lead", reg1_gate:"v_reg1",
+              reg1_gate_2lead:"v_reg1b", cpr_max:"v_cpr", report_every_min:"v_rep"};
+  var mode = "funnel";
+
+  // restore last saved (per-viewer convenience)
+  try{
+    var saved = JSON.parse(localStorage.getItem("eea_gates")||"{}");
+    GATES.forEach(function(k){ if(saved[k]!=null) document.getElementById(k).value = saved[k]; });
+    if(saved.mode) mode = saved.mode;
+    if(saved.prefix) document.getElementById("prefix").value = saved.prefix;
+  }catch(e){}
+
+  function syncLabels(){
+    GATES.forEach(function(k){ document.getElementById(VMAP[k]).textContent = document.getElementById(k).value; });
+    Array.prototype.forEach.call(document.querySelectorAll("#modeSeg button"), function(b){
+      b.classList.toggle("on", b.dataset.mode===mode);
+    });
+    document.getElementById("funnelCard").style.opacity = (mode==="funnel") ? "1" : ".5";
+  }
+  GATES.forEach(function(k){ document.getElementById(k).addEventListener("input", syncLabels); });
+  Array.prototype.forEach.call(document.querySelectorAll("#modeSeg button"), function(b){
+    b.addEventListener("click", function(){ mode=b.dataset.mode; syncLabels(); });
+  });
+
+  function collect(){
+    var out = {mode: mode};
+    GATES.forEach(function(k){ out[k] = parseFloat(document.getElementById(k).value); });
+    out.prefix = (document.getElementById("prefix").value || "EEA").trim().toUpperCase();
+    return out;
+  }
+  function save(){
+    var data = collect();
+    try{ localStorage.setItem("eea_gates", JSON.stringify(data)); }catch(e){}
+    if(tg && tg.sendData){ tg.sendData(JSON.stringify(data)); }  // → bot → guard_settings.json
+    else { alert("Открой через кнопку в боте (нет Telegram.WebApp)"); }
+  }
+
+  if(tg){
+    tg.ready(); tg.expand();
+    if(tg.initDataUnsafe && tg.initDataUnsafe.user){
+      document.getElementById("who").textContent = "@"+(tg.initDataUnsafe.user.username||tg.initDataUnsafe.user.first_name||"");
+    }
+    tg.MainButton.setText("Сохранить гейты");
+    tg.MainButton.color = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#2ea6ff";
+    tg.MainButton.show();
+    tg.MainButton.onClick(save);
+  }
+  syncLabels();
+})();
+</script>
+</body>
+</html>
